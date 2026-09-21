@@ -55,11 +55,17 @@ live2d-nuxt/
 这些本质上是独立的“系统”，有极强的状态封装性、生命周期和内部逻辑，用 Class 写绝对是最好的选择！
 
 Vue/Nuxt 视图层（使用 FP 组合式桥接）
-# 产品需求
+# 产品需求分析
 
-## 打字正确
+## 打字与数据流动
 
-加经验、升级
+`单词库json` → OOP 实例随机取出单词 → composable 把数据转成 Vue 响应式 → 组件 template 渲染字符
+
+键盘事件 → 组件捕获 → 传给 composable 的 handleKeyInput → 更新 charStates（触发回弹动画）
+
+单词全部打完 → OOP.finishWord () → exp+1，判断升级 → 存档写入 localStorage → 加载下一个单词
+
+打错单词回弹必须打对
 
 ## 经验变动 
 
