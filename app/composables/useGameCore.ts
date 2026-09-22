@@ -1,81 +1,97 @@
-import wordList from '~/assets/words.json'
-import { TypeGameCore } from '~/core/type/TypeGameCore.js'
+import { ref, computed, onMounted } from 'vue';
+import { 
+  type TypeGameState, 
+  finishWord as coreFinishWord 
+} from '~/core/type/TypeGameCore'; // 假设你的 Core 代码在 utils/gameCore.ts
+
+// 1. 在胶水层导入 JSON 词库数据
+import rawWordList from '~/assets/words.json';
+
+const STORAGE_KEY = 'TYPE_GAME_STATE';
 
 export function useTypeGame() {
-  // 从localStorage读取存档
-  const loadSave = () => {
-    const str = localStorage.getItem('typeSave')
-    return str ? JSON.parse(str) : undefined
-  }
-  // 实例化OOP游戏核心
-  const game = new TypeGameCore(wordList, loadSave())
+  // 状态初始化（默认从 JSON 加载初始词库）
+  const state = ref<TypeGameState>({
+    wordList: rawWordList || [],
+    exp: 0,
+    level: 1,
+    finishedWords: [],
+  });
 
-  // Vue响应式状态（FP，响应式变量，供模板渲染）
-  const currentWord = ref('')
-  const userInput = ref('')
-  // 每个字符状态 pending待输入 correct正确 wrong错误
-  const charStates = ref<Array<'pending'|'correct'|'wrong'>>([])
-  // 等级/经验：从 OOP 核心同步到响应式（game.exp 是普通属性，需手动同步触发渲染）
-  const level = ref(game.level)
-  const exp = ref(game.exp)
+  // 当前待打的单词（即不在已完成列表中的第一个单词）
+  const currentWord = computed(() => {
+    return state.value.wordList.find(
+      (word) => !state.value.finishedWords.includes(word)
+    ) || '';
+  });
 
-  // 把 OOP 核心的最新存档同步到响应式变量
-  function syncState() {
-    const save = game.getSaveData()
-    level.value = save.level
-    exp.value = save.exp
-  }
+  // 游戏是否通关
+  const isGameCompleted = computed(() => {
+    return state.value.wordList.length > 0 && 
+      state.value.finishedWords.length === state.value.wordList.length;
+  });
 
-  // 初始化下一个单词
-  function nextWord() {
-    userInput.value = ''
-    currentWord.value = game.pickNewWord()
-    charStates.value = currentWord.value.split('').map(() => 'pending')
-  }
-
-  // 处理键盘输入
-  function handleKeyInput(key:string) {
-    // 回退键
-    if(key === 'Backspace') {
-      userInput.value = userInput.value.slice(0, -1)
-    } else {
-      userInput.value += key
-    }
-
-    // 逐个对比字符，更新状态（用来做回弹动画）
-    const arr: Array<'pending'|'correct'|'wrong'> = []
-    for(let i=0; i < currentWord.value.length; i++) {
-      const targetChar = currentWord.value[i]
-      const inputChar = userInput.value[i]
-      if(inputChar === undefined) {
-        arr.push('pending')
-      } else if(inputChar === targetChar) {
-        arr.push('correct')
-      } else {
-        arr.push('wrong')
+  // 从 LocalStorage 加载数据
+  const loadStorage = () => {
+    if (import.meta.client) {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          state.value = {
+            ...parsed,
+            // 确保如果 json 更新了新词，也能兼容合并
+            wordList: parsed.wordList || rawWordList,
+          };
+        } catch (e) {
+          console.error('Failed to parse state from localStorage', e);
+        }
       }
     }
-    charStates.value = arr
+  };
 
-    // 判断单词全部输入完成
-    if(userInput.value.length === currentWord.value.length) {
-      game.finishWord(currentWord.value)
-      // 同步等级/经验到响应式，并保存存档到localStorage
-      syncState()
-      localStorage.setItem('typeSave', JSON.stringify(game.getSaveData()))
-      nextWord()
+  // 保存数据到 LocalStorage
+  const saveStorage = () => {
+    if (import.meta.client) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.value));
     }
-  }
+  };
 
-  // 初始化第一个单词
-  nextWord()
+  // 挂载时恢复进度
+  onMounted(() => {
+    loadStorage();
+  });
+
+  // 业务动作：完成一个单词
+  const submitWord = (inputWord: string) => {
+    // 调用 Core 的纯逻辑函数生成新 State
+    const nextState = coreFinishWord(state.value, inputWord);
+    
+    // 如果状态发生了改变（说明输入成功）
+    if (nextState !== state.value) {
+      state.value = nextState; // 更新响应式状态
+      saveStorage();           // 持久化到 LocalStorage
+      return true;
+    }
+    return false;
+  };
+
+  // 重置游戏进度
+  const resetGame = () => {
+    state.value = {
+      wordList: rawWordList || [],
+      exp: 0,
+      level: 1,
+      finishedWords: [],
+    };
+    saveStorage();
+  };
 
   return {
+    state,
     currentWord,
-    userInput,
-    charStates,
-    level,
-    exp,
-    handleKeyInput
-  }
+    isGameCompleted,
+    submitWord,
+    resetGame,
+  };
 }

@@ -2,7 +2,7 @@
 
 ```txt
 live2d-nuxt/
-├── core/                        # 【核心层 - OOP 编程的主战场】
+├── core/                        # 【核心层 - OOP 编程的主战场】处理业务逻辑
 │   ├── live2d/
 │   │   ├── Live2dManager.ts     # Live2D 渲染与模型加载总控类 (Class)
 │   │   └── MotionController.ts  # 表情/动作队列控制器类 (Class)
@@ -14,11 +14,11 @@ live2d-nuxt/
 ├── libs/                        # 【第三方库/SDK 封装】
 │   └── live2d-sdk/             # 放置 Live2D 底层 SDK 依赖文件
 │
-├── composables/                 # 【桥接层 - 连接 OOP Core 与 Vue UI】
+├── composables/                 # 【桥接层 - 连接 OOP Core 与 Vue UI】 组合逻辑业务和页面渲染
 │   ├── useGameCore.ts          # 桥接 TypingEngine & Live2dManager
 │   └── useLLMChat.ts           # 桥接 ChatBotManager
 │
-├── components/                  # 【UI 组件层】
+├── components/                  # 【UI 组件层】 组件渲染层
 │   ├── live2d/
 │   │   └── Canvas.vue          # Live2D WebGL 挂载画布组件
 │   └── typing/
@@ -46,42 +46,8 @@ live2d-nuxt/
 └── nuxt.config.ts               # Nuxt 配置文件
 ```
 
-核心业务/引擎用 OOP 封装，上层 UI/状态用 FP 响应式桥接。
-
-核心系统与引擎（必须面向 OOP 编程）
-
-涉及 Live2D 渲染管理、动作队列、LLM 对话流控制器、音频播放器 等。
-
-这些本质上是独立的“系统”，有极强的状态封装性、生命周期和内部逻辑，用 Class 写绝对是最好的选择！
-
-Vue/Nuxt 视图层（使用 FP 组合式桥接）
-# 产品需求分析
-
-## 打字与数据流动
-
-`单词库json` → OOP 实例随机取出单词 → composable 把数据转成 Vue 响应式 → 组件 template 渲染字符
-
-键盘事件 → 组件捕获 → 传给 composable 的 handleKeyInput → 更新 charStates（触发回弹动画）
-
-单词全部打完 → OOP.finishWord () → exp+1，判断升级 → 存档写入 localStorage → 加载下一个单词
-
-打错单词回弹必须打对
-
-## 经验变动 
-
-Live2D角色做出对应表情/动作可以推进剧情，像GAL一样对话 WebGL渲染角色画面
-
-##  Live2D
-
-大模型用来做对话交互（LLM接口） chatbot
-
-一定等级切换live2D 模型
-
-脚本绑定DOM v-pet-xxxx="'123'"
-
-
-
-<details>
-<summary>经验进度设计</summary>
-
-</details>
+|分层|职责|允许内容|禁止内容|
+| ---- | ---- | ---- | ---- |
+|core 领域层|纯规则、纯数据模型，负责业务计算|类 / 接口、纯函数、原始数据模型，选词、经验计算、升级判断等业务规则|ref、DOM操作、localStorage、Vue生命周期、任何副作用，框架相关API|
+|composables 适配胶水层|引入core，包装为Vue响应式；处理副作用，连接领域层与视图|ref/reactive、生命周期钩子、localStorage读写、事件绑定，对外暴露状态与方法|复杂业务计算公式，核心业务规则|
+|components 视图渲染层|DOM渲染、捕获用户原生事件|template页面结构、css样式、捕获键盘/点击事件，调用composables暴露的方法|业务规则计算，直接操作core领域实体|

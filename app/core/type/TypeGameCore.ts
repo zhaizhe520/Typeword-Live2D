@@ -1,50 +1,45 @@
-// OOP 类，游戏核心逻辑
-export class TypeGameCore {
-  wordList: string[]
-  exp: number
-  level: number
-  finishedWords: string[]
+// 纯数据契约（State / Model）
+//实现拿出单词打---->打完获得经验++ ----> 经验到一定量等级++-----> 打完的单词存入localstroing
+//纯逻辑规则
+export interface TypeGameState {
+  wordList: string[];
+  exp: number;
+  level: number;
+  finishedWords: string[];
+}
 
-  constructor(wordList: string[], saveData?: {exp:number,level:number,finishedWords:string[]}) {
-    this.wordList = wordList
-    this.exp = saveData?.exp ?? 0
-    this.level = saveData?.level ?? 1
-    this.finishedWords = saveData?.finishedWords ?? []
+
+export const EXP_PER_LEVEL = 10;
+export const EXP_PER_WORD = 1;
+
+// 根据总经验计算等级 无副作用
+export function calcLevel(exp: number): number {
+  return Math.floor(exp / EXP_PER_LEVEL) + 1;
+}
+
+export function finishWord(
+  state: TypeGameState,
+  word: string
+): TypeGameState {
+  // 不在词库中，不处理
+  if (!state.wordList.includes(word)) {
+    return state;
   }
 
-  // 抽取一个新单词（排除已经打完的）
-  pickNewWord(): string {
-    const remainWords = this.wordList.filter(w => !this.finishedWords.includes(w))
-    // 单词库全部打完时重置已完成列表，循环开始新一轮
-    if (remainWords.length === 0) {
-      this.finishedWords = []
-      return this.pickNewWord()
-    }
-    return remainWords[Math.floor(Math.random() * remainWords.length)]!
+  // 已经打过，不重复加经验
+  if (state.finishedWords.includes(word)) {
+    return state;
   }
 
-  // 单词打完，增加经验：一个单词 +1%
-  addExp() {
-    this.exp += 1
-    // 经验满100，升级，经验归零
-    if(this.exp >= 100) {
-      this.exp = 0
-      this.level += 1
-    }
-  }
+  const nextExp = state.exp + EXP_PER_WORD;
 
-  // 完成单词，加入已完成列表
-  finishWord(word:string) {
-    this.finishedWords.push(word)
-    this.addExp()
-  }
+  return {
+    ...state,
+    exp: nextExp,
+    level: calcLevel(nextExp),
+    finishedWords: [...state.finishedWords, word],
 
-  // 导出存档，存localStorage
-  getSaveData() {
-    return {
-      exp: this.exp,
-      level: this.level,
-      finishedWords: this.finishedWords
-    }
-  }
+    // 如果打完要从待打列表移除，可以加：
+    // wordList: state.wordList.filter(w => w !== word),
+  };
 }
