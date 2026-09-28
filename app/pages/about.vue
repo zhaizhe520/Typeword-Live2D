@@ -16,6 +16,12 @@ const handleInput = () => {
     }
   }
 };
+
+// 重置：清空输入框 + 重置游戏状态（等级/经验/已完成列表归零并持久化）
+const handleReset = () => {
+  userInput.value = '';
+  resetGame();
+};
 </script>
 
 <template>
@@ -38,6 +44,8 @@ const handleInput = () => {
 
     <!-- 游戏主区域 -->
     <main class="play-area">
+      <button class="reset-btn" @click="handleReset">重置游戏</button>
+
       <div v-if="!isGameCompleted" class="word-card">
         <p class="hint">请打出以下单词：</p>
         <h1 class="target-word">{{ currentWord }}</h1>
@@ -56,7 +64,6 @@ const handleInput = () => {
       <!-- 通关展示 -->
       <div v-else class="completed-card">
         <h2>🎉 恭喜！你已打完词库中的所有单词！</h2>
-        <button class="reset-btn" @click="resetGame">重新开始</button>
       </div>
     </main>
   </div>
@@ -115,7 +122,7 @@ const handleInput = () => {
 }
 
 .reset-btn {
-  margin-top: 16px;
+  margin: 16px 0;
   padding: 10px 20px;
   background-color: #2563eb;
   color: white;
