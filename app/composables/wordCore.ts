@@ -29,8 +29,8 @@ export function useWord() {
 
   // 经验领域（通过交换机兑换经验）
   const { gainByWords } = useGameStore();
-
-  // 洗牌取出 count 个词条
+ 
+  // 洗牌算法取出 count 个词条
   function pickRandom(count: number) {
     const shuffled = [...allWords].sort(() => Math.random() - 0.5);
     words.value = shuffled.slice(0, count);

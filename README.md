@@ -86,6 +86,9 @@ live2d-nuxt/
 
 <details>
 <summary>单词与经验绑定</summary>
-interface 接口 实现json 全部字段
+
+interface 接口 实现json 全部字段 变成 对象.value 实现在渲染层渲染
+
+
 
 </details>
