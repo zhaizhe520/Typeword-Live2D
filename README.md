@@ -48,7 +48,7 @@ live2d-nuxt/
 
 |分层|职责|允许内容|禁止内容|
 | ---- | ---- | ---- | ---- |
-|core 领域层|纯规则、纯数据模型，负责业务计算|类 / 接口、纯函数、原始数据模型，选词、经验计算、升级判断等业务规则|ref、DOM操作、localStorage、Vue生命周期、任何副作用，框架相关API|
+|core 领域层|纯规则、纯数据模型，负责业务计算|类 / 接口、纯函数、原始数据模型，选词、经验计算、升级判断等业务规则|
 |composables 适配胶水层|引入core，包装为Vue响应式；处理副作用，连接领域层与视图|ref/reactive、生命周期钩子、localStorage读写、事件绑定，对外暴露状态与方法|复杂业务计算公式，核心业务规则|
 |components 视图渲染层|DOM渲染、捕获用户原生事件|template页面结构、css样式、捕获键盘/点击事件，调用composables暴露的方法|业务规则计算，直接操作core领域实体|
 
@@ -83,3 +83,9 @@ live2d-nuxt/
   * **WPM** (Words Per Minute / 每分钟词数)
   * **CPM** (Characters Per Minute / 每分钟字符数)
   * **Accuracy** (实时正确率 %)
+
+<details>
+<summary>单词与经验绑定</summary>
+interface 接口 实现json 全部字段
+
+</details>

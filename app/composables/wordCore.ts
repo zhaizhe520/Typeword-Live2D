@@ -1,24 +1,65 @@
-import wordList from '~/assets/words.json';
-import { ref } from 'vue';
 // ============================================================
-// 胶水层：把 words.json 的静态词库变成 Vue 响应式，供 word.vue 渲染
+// 单词领域 · 胶水层
+// 把 n2.json 的静态词库变成 Vue 响应式，并连接经验领域（交换机）。
 // ============================================================
+import wordList from '~/assets/n2.json';
+
+// n2.json 里每个词条的结构
+export interface WordEntry {
+  // 汉字词（展示在顶部）
+  expression: string;
+  // 读音（要打对的目标）
+  reading: string;
+  // 释义
+  meaning: string;
+  // 标签
+  tags: string;
+}
+
 export function useWord() {
-  // 全量词库（只读，来源：words.json）
-  const allWords: string[] = wordList;
+  // 全量词库（只读，来源：n2.json）
+  const allWords: WordEntry[] = wordList;
 
-  // 当前展示的单词列表（响应式，UI 直接绑定）
-  const words = ref<string[]>([]);
+  // 当前展示的词条（响应式，UI 直接绑定）
+  const words = ref<WordEntry[]>([]);
+  // 每个词条对应的输入答案（打的是 reading）
+  const answers = ref<string[]>([]);
+  // 每个词条的对错状态：undefined 未提交 / true 打对 / false 打错
+  const results = ref<(boolean | undefined)[]>([]);
 
-  // 洗牌函数
+  // 经验领域（通过交换机兑换经验）
+  const { gainByWords } = useGameStore();
+
+  // 洗牌取出 count 个词条
   function pickRandom(count: number) {
-    //展开拿到新的数组--->排序---->洗牌 算法
     const shuffled = [...allWords].sort(() => Math.random() - 0.5);
     words.value = shuffled.slice(0, count);
+    answers.value = words.value.map(() => '');
+    results.value = words.value.map(() => undefined);
+  }
+
+  // 提交一个词条：核对 reading（读音）→ 打对则通过「交换机」兑换经验
+  function submitWord(idx: number) {
+    const target = words.value[idx];
+    if (!target) return;
+    // 打对后锁定，不重复提交
+    if (results.value[idx] === true) return;
+
+    const input = (answers.value[idx] ?? '').trim();
+    // 平假名读音需精确匹配
+    const correct = input === target.reading;
+    results.value[idx] = correct;
+
+    if (correct) {
+      gainByWords(1);
+    }
   }
 
   return {
     words,
+    answers,
+    results,
     pickRandom,
+    submitWord,
   };
 }
