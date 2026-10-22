@@ -34,6 +34,8 @@ export function useWord() {
   function pickRandom(count: number) {
     const shuffled = [...allWords].sort(() => Math.random() - 0.5);
     words.value = shuffled.slice(0, count);
+    // map() 会遍历数组、对每个元素执行回调、返回一个新数组。
+    // 这里给每个词条各生成一个空答案 / 未提交状态，保证长度一致。
     answers.value = words.value.map(() => '');
     results.value = words.value.map(() => undefined);
   }

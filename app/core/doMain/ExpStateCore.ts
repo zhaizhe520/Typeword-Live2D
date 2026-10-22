@@ -5,7 +5,7 @@
 
 // 经验契约
 export interface ExpState {
-  // 当前等级下的经验值（0 ~ EXP_PER_LEVEL - 1）
+  // 当前等级内已攒的经验
   exp: number;
   // 经验等级（从 1 开始）
   expLevel: number;
@@ -18,42 +18,33 @@ export interface MooState {
   mooLevel: number;
 }
 
-// 每升一级所需的经验数 = 打完 10 个单词
-export const EXP_PER_LEVEL = 10;
+/**
+ * 升到下一级需要的经验（逐级递增）：
+ * 第 N 级升到 N+1 级需要 10 × N 经验。
+ * 1→2 要 10，2→3 要 20，3→4 要 30 … 越往后越难。
+ */
+export function expToNextLevel(level: number): number {
+  return 10 * level;
+}
 
 /**
- * 纯函数：增加经验，满 10 经验自动升一级
+ * 纯函数：增加经验，攒满当前级所需经验后自动升级（可连升多级）。
  * @param state 旧的经验状态
  * @param amount 要增加多少经验
  * @returns 返回全新的 ExpState 对象（不改动原对象）
  */
 export function addExp(state: ExpState, amount: number): ExpState {
-  const totalExp = state.exp + amount;
-  const levelGained = Math.floor(totalExp / EXP_PER_LEVEL);
-  const remainingExp = totalExp % EXP_PER_LEVEL;
+  let exp = state.exp + amount;
+  let level = state.expLevel;
+
+  // 只要经验还够升一级，就扣掉本级所需并升一级
+  while (exp >= expToNextLevel(level)) {
+    exp -= expToNextLevel(level);
+    level += 1;
+  }
 
   return {
-    exp: remainingExp,
-    expLevel: state.expLevel + levelGained,
-  };
-}
-
-/**
- * 纯函数：减少经验
- * 先把等级折算回「总经验」再减，最低停在 Lv.1 / 0 经验（不会掉到负数）
- * @param state 旧的经验状态
- * @param amount 要减少多少经验
- * @returns 返回全新的 ExpState 对象
- */
-export function subExp(state: ExpState, amount: number): ExpState {
-  // 总经验 = 已升级的经验 + 当前等级内经验
-  const totalExp = Math.max(
-    0,
-    (state.expLevel - 1) * EXP_PER_LEVEL + state.exp - amount,
-  );
-
-  return {
-    expLevel: Math.floor(totalExp / EXP_PER_LEVEL) + 1,
-    exp: totalExp % EXP_PER_LEVEL,
+    exp,
+    expLevel: level,
   };
 }

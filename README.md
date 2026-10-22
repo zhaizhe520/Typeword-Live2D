@@ -87,8 +87,90 @@ live2d-nuxt/
 <details>
 <summary>单词与经验绑定</summary>
 
-interface 接口 实现json 全部字段 变成 对象.value 实现在渲染层渲染
+一个单词对应经验 1，经验满级自动升 1 级，由「交换机函数」把单词数兑换成经验。整个链路分三层：领域层只算、胶水层只接、渲染层只画。
 
+### 第 1 层：领域层 `core/doMain/`（纯函数，无 Vue、无副作用）
 
+```txt
+// 状态就一个对象
+ExpState = { exp, expLevel }
+
+// ── 汇率（交换机的前提）──
+EXP_PER_WORD = 1                      // 1 个单词 = 1 经验
+expToNextLevel(level) = 10 * level    // 升到下一级需要多少经验（逐级递增）
+
+// ── 纯函数①：加经验，满了自动升级 ──
+addExp(state, amount):
+    exp   = state.exp + amount
+    level = state.expLevel
+    while exp >= expToNextLevel(level):   // 经验够升就扣掉、升一级，可连升
+        exp   -= expToNextLevel(level)
+        level += 1
+    return { exp, expLevel: level }
+
+// ── 纯函数②：交换机 —— 把「单词数」兑换成「经验」──
+exchangeWordToExp(state, wordCount):
+    return addExp(state, wordCount * EXP_PER_WORD)
+```
+
+关键点：`addExp` 不知道「1 词 = 1 经验」，它只负责「加 N 点经验 + 满级进位」。「1 词 = 1 经验」这条规则被单独抽在交换机 `exchangeWordToExp` 里，以后改成「1 首歌 = 20 经验」只动交换机，不动 `addExp`。
+
+### 第 2 层：胶水层 `composables/`（Vue 响应式 + 持久化）
+
+```txt
+// ── useGameStore：经验领域的胶水 ──
+useGameStore():
+    expState = useState({exp:0, expLevel:1})          // 变成响应式 ref
+    gainByWords(wordCount):
+        expState.value = exchangeWordToExp(expState.value, wordCount)  // 调交换机
+        await store.setItem('expState', expState.value)                // localforage 存档
+    return { expState, gainByWords }
+
+// ── useWord：单词领域的胶水 ──
+useWord():
+    allWords = 读 n2.json                     // [{expression, reading, meaning, tags}, ...]
+    words   = ref([])       // 随机挑出来的词条
+    answers = ref([])       // 每个词条对应的输入
+    gainByWords = useGameStore().gainByWords  // 拿经验领域的动作
+
+    pickRandom(n): 洗牌 → 取前 n 个 → 清空 answers
+    submitWord(idx):
+        if answers[idx] == words[idx].reading:   // 打对读音
+            gainByWords(1)                       // 1 个词 → 走交换机 → +1 经验
+```
+
+胶水层不自己算经验，只是把「打对 1 个词」翻译成「调 gainByWords(1)」，计算交给领域层，存盘交给 localforage。
+
+### 第 3 层：渲染层 `pages/N2.vue`（DOM + 事件）
+
+```txt
+<template>
+    exp 面板:  Lv.{expLevel}  [====进度条====]  {exp} / {expToNextLevel(expLevel)}
+
+    for (word, idx) in words:            // 每个词条一张卡片
+        大字渲染  word.expression        // 汉字词「就任」
+        下面渲染  word.meaning  word.tags
+        <input  v-model=answers[idx]>    // 用户打读音
+        <button @click=submitWord(idx)>  // 点击提交
+</template>
+```
+
+### 完整数据流（打一个「就任」为例）
+
+```txt
+用户输入 しゅうにん → 点提交
+  └→ submitWord(0)
+       ├─ answers[0]("しゅうにん") == words[0].reading("しゅうにん") ✓
+       └→ gainByWords(1)                     // 胶水层
+            └→ exchangeWordToExp({exp:0,level:1}, 1)   // 交换机
+                 └→ addExp(state, 1*1)               // 纯函数
+                      → exp=1，不够 10，返回 {exp:1, level:1}
+            └→ store.setItem(...) 存盘             // 刷新也不丢
+       → expState 变了 → Vue 自动更新 Lv/进度条
+```
+
+再连打 9 个词：exp 从 1 一路 +1 到 10，第 10 个词触发 `while exp>=10` → 扣 10、level 变 2、exp 归 0，于是「10 经验升 1 级」。
+
+一句话串起来：**渲染层抓事件 → 胶水层调 gainByWords(1) → 交换机把「1 词」换成「1 经验」→ addExp 算满级进位 → 存盘 → 响应式自动刷新 UI**。
 
 </details>

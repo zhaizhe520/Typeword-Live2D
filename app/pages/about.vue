@@ -1,3 +1,3 @@
 <template>
-  <NuxtLink to="/word">去打字</NuxtLink>
+  <NuxtLink to="/N2">N2</NuxtLink>
 </template>
