@@ -52,6 +52,8 @@ live2d-nuxt/
 |composables 适配胶水层|引入core，包装为Vue响应式；处理副作用，连接领域层与视图|ref/reactive、生命周期钩子、localStorage读写、事件绑定，对外暴露状态与方法|复杂业务计算公式，核心业务规则|
 |components 视图渲染层|DOM渲染、捕获用户原生事件|template页面结构、css样式、捕获键盘/点击事件，调用composables暴露的方法|业务规则计算，直接操作core领域实体|
 
+<details>
+<summary>技术选型要求</summary>
 * **TypeScript**
   * **深度要求**：全量 TypeScript 开发，需要熟练掌握类型定义、泛型、接口（Interfaces）以及 Vue 全家桶中的 TS 类型推导与扩展。
 * **Nuxt 3 / Vue 3**
@@ -83,11 +85,17 @@ live2d-nuxt/
   * **WPM** (Words Per Minute / 每分钟词数)
   * **CPM** (Characters Per Minute / 每分钟字符数)
   * **Accuracy** (实时正确率 %)
+</details>
+
+
+# 功能设计
 
 <details>
 <summary>单词与经验绑定</summary>
 
 一个单词对应经验 1，经验满级自动升 1 级，由「交换机函数」把单词数兑换成经验。整个链路分三层：领域层只算、胶水层只接、渲染层只画。
+
+addExp 是最底层的算数机器，exchangeWordToExp 是换钱的柜台，gainByWords 是跑腿并记账的经理，submitWord 是接待你的服务员。各司其职，就是这个设计的精髓。
 
 ### 第 1 层：领域层 `core/doMain/`（纯函数，无 Vue、无副作用）
 

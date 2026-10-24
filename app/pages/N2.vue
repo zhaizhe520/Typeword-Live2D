@@ -18,9 +18,10 @@
         <!-- 汉字词 -->
         <div class="expression">{{ word.expression }}</div>
 
-        <!-- 释义 + 标签 -->
+        <!-- 释义（英文 + 中文）+ 标签 -->
         <div class="meta">
           <span class="meaning">{{ word.meaning }}</span>
+          <span v-if="word.meaning_zh" class="meaning-zh">{{ word.meaning_zh }}</span>
           <span v-for="tag in word.tags.split(' ')" :key="tag" class="tag">{{ tag }}</span>
         </div>
 
@@ -43,8 +44,16 @@
           </span>
         </div>
 
-        <!-- 打错时提示正确读音 -->
-        <div v-if="results[idx] === false" class="hint">正确读音：{{ word.reading }}</div>
+        <!-- 「忘记了看一眼」：点击显示正确读音 -->
+        <button
+          v-if="!hintsShown[idx]"
+          class="hint-btn"
+          @click="showHint(idx)"
+        >
+          忘记了看一眼
+        </button>
+        <div v-if="hintsShown[idx]" class="hint">正确读音：{{ word.reading }}</div>
+
       </div>
 
       <button class="random" @click="pickRandom(5)">随机 5 个</button>
@@ -56,7 +65,7 @@
 import { expToNextLevel } from '~/core/doMain/ExpStateCore';
 
 // 单词层（词库 + 答案 + 对错） + 经验领域层
-const { words, answers, results, pickRandom, submitWord } = useWord();
+const { words, answers, results, hintsShown, pickRandom, submitWord, showHint } = useWord();
 const { expState } = useGameStore();
 
 // 当前等级升到下一级还需要多少经验
@@ -153,6 +162,9 @@ const expPercent = computed(() =>
 .meaning {
   color: #4b5563;
 }
+.meaning-zh {
+  color: #6b7280;
+}
 .tag {
   padding: 2px 8px;
   background: #ede9fe;
@@ -205,6 +217,16 @@ const expPercent = computed(() =>
 }
 .result.no {
   color: #dc2626;
+}
+.hint-btn {
+  margin-top: 10px;
+  padding: 6px 12px;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #b45309;
+  font-size: 13px;
+  cursor: pointer;
 }
 .hint {
   margin-top: 10px;

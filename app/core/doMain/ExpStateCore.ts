@@ -18,6 +18,22 @@ export interface MooState {
   mooLevel: number;
 }
 
+// 把单词接口对象放到领域层
+// n2.json 里每个词条的结构
+export interface WordEntry {
+  // 汉字词（展示在顶部）
+  expression: string;
+  // 读音（要打对的目标）
+  reading: string;
+  // 英文释义
+  meaning: string;
+  // 中文释义（部分词条为空，渲染时兜底不显示）
+  meaning_zh: string;
+  // 标签（空格分隔，如 "JLPT JLPT_2"）
+  tags: string;
+}
+
+
 /**
  * 升到下一级需要的经验（逐级递增）：
  * 第 N 级升到 N+1 级需要 10 × N 经验。
@@ -48,3 +64,4 @@ export function addExp(state: ExpState, amount: number): ExpState {
     expLevel: level,
   };
 }
+
