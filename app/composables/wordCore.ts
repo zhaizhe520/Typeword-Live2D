@@ -53,6 +53,23 @@ export function useWord() {
     hintsShown.value[idx] = true;
   }
 
+  // 播放读音：用浏览器内置的 TTS 语音合成引擎朗读 reading。
+  // 注意读的是 reading（平假名），不是 expression（汉字），否则可能读错音。
+  function playReading(idx: number) {
+    const target = words.value[idx];
+    if (!target || !import.meta.client) return;
+
+    // 先取消上一次没读完的语音，避免连点多个按钮时语音堆叠
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(target.reading);
+    // 关键：明确指定日语，否则浏览器可能用默认语言读错
+    utterance.lang = 'ja-JP';
+      utterance.rate = 0.4;
+    window.speechSynthesis.speak(utterance);
+  
+  }
+
   return {
     words,
     answers,
@@ -61,5 +78,6 @@ export function useWord() {
     pickRandom,
     submitWord,
     showHint,
+    playReading,
   };
 }

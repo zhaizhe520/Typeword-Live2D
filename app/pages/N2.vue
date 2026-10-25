@@ -15,8 +15,11 @@
     <!-- 词条卡片列表 -->
     <div class="inner">
       <div v-for="(word, idx) in words" :key="idx" class="card" :class="{ done: results[idx] === true }">
-        <!-- 汉字词 -->
-        <div class="expression">{{ word.expression }}</div>
+        <!-- 汉字词 + 播放读音 -->
+        <div class="expression-row">
+          <div class="expression">{{ word.expression }}</div>
+          <button class="speak-btn" @click="playReading(idx)">🔊 读音</button>
+        </div>
 
         <!-- 释义（英文 + 中文）+ 标签 -->
         <div class="meta">
@@ -65,7 +68,7 @@
 import { expToNextLevel } from '~/core/doMain/ExpStateCore';
 
 // 单词层（词库 + 答案 + 对错） + 经验领域层
-const { words, answers, results, hintsShown, pickRandom, submitWord, showHint } = useWord();
+const { words, answers, results, hintsShown, pickRandom, submitWord, showHint, playReading } = useWord();
 const { expState } = useGameStore();
 
 // 当前等级升到下一级还需要多少经验
@@ -145,11 +148,30 @@ const expPercent = computed(() =>
   border-color: #bbf7d0;
   background: #f0fdf4;
 }
+.expression-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
 .expression {
   font-size: 28px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  margin-bottom: 8px;
+}
+.speak-btn {
+  padding: 5px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.speak-btn:hover {
+  background: #f9fafb;
+  border-color: #6d28d9;
 }
 .meta {
   display: flex;

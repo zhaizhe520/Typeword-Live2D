@@ -182,3 +182,27 @@ useWord():
 一句话串起来：**渲染层抓事件 → 胶水层调 gainByWords(1) → 交换机把「1 词」换成「1 经验」→ addExp 算满级进位 → 存盘 → 响应式自动刷新 UI**。
 
 </details>
+
+TTS 引擎
+
+
+# Web Speech API  真正会读的是浏览器/操作系统里内置的 TTS 语音合成引擎。
+ 
+浏览器内部已经有一套语音合成能力，你只是把文本和语言参数交给它。
+
+把json 存入？
+
+```js
+创建话语对象，传入你要读的单词
+const utterance = new SpeechSynthesisUtterance(wordItem.reading); // 用 "たべる"，不要用 "食べる"
+utterance.lang = 'ja-JP';
+
+需要防抖
+
+// 2. 关键一步：明确指定语言为日语
+utterance.lang = 'jp'; // 或 'en-GB'
+
+// 3. 让浏览器播放
+window.speechSynthesis.speak(utterance);
+```
+
